@@ -1,0 +1,12 @@
+{"properties": [
+  {
+    "name": "jwt.token",
+    "type": "java.lang.String",
+    "description": "Store the encryption key in this."
+  },
+  {
+    "name": "jwt.expiration",
+    "type": "integer",
+    "description": "A description for 'jwt.expiration'"
+  }
+]}

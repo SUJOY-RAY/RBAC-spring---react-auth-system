@@ -1,0 +1,16 @@
+type Mutation {
+    register(username: String!, password: String!): Boolean
+    login(username: String!, password: String!): Boolean
+    logout: Boolean
+}
+
+
+type Query {
+    me: User
+    adminOnly: String
+}
+
+type User {
+    username: String
+    role: String
+} 
