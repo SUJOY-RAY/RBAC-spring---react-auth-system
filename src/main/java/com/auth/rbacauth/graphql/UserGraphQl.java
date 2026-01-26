@@ -22,3 +22,4 @@ public class UserGraphQl {
         return "ADMIN secret data 🚨";
     }
 }
+
