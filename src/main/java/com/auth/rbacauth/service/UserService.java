@@ -1,8 +1,13 @@
 package com.auth.rbacauth.service;
 
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.auth.rbacauth.models.CustomUserDetails;
 import com.auth.rbacauth.models.Role;
 import com.auth.rbacauth.models.UserEntity;
 import com.auth.rbacauth.repositories.UserRepository;
@@ -12,7 +17,8 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-public class UserService {
+public class UserService implements UserDetailsService {
+
     private final UserRepository repo;
     private final PasswordEncoder encoder;
 
@@ -37,8 +43,13 @@ public class UserService {
                         Role.ROLE_USER));
     }
 
-    public UserEntity load(String username) {
-        return repo.findByUsername(username)
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        UserEntity user = repo.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found."));
+        return User.withUsername(user.getUsername())
+                .password(user.getPassword())
+                .authorities(user.getAuthorities())
+                .build();
     }
 }

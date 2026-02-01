@@ -1,30 +1,44 @@
 package com.auth.rbacauth.security;
 
-import java.time.Duration;
-
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.ResponseCookie;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import org.springframework.stereotype.Component;
 
 @Component
 public class CookieUtil {
-    @Value("${cookie.accessToken}")
-    private String ACCESS_TOKEN;
 
-    public ResponseCookie jwtCookie(String token) {
-        return ResponseCookie.from(ACCESS_TOKEN, token)
-                .httpOnly(false)
-                .secure(false)
-                .path("/")
-                .sameSite("Lax")
-                .maxAge(Duration.ofMinutes(15))
-                .build();
+    private static final String ACCESS_TOKEN = "ACCESS_TOKEN";
+    private static final int MAX_AGE = 15 * 60; // 15 minutes
+
+    public String createJwtCookieHeader(String token, boolean secure) {
+        String encoded = URLEncoder.encode(token, StandardCharsets.UTF_8);
+        StringBuilder sb = new StringBuilder();
+
+        sb.append(ACCESS_TOKEN).append("=").append(encoded)
+                .append("; Path=/")
+                .append("; HttpOnly")
+                .append("; Max-Age=").append(MAX_AGE)
+                .append("; SameSite=Lax");
+
+        if (secure) {
+            sb.append("; Secure");
+        }
+
+        return sb.toString();
     }
 
-    public ResponseCookie clear() {
-        return ResponseCookie.from(ACCESS_TOKEN, "")
-                .path("/")
-                .maxAge(0)
-                .build();
+    public String clearJwtSetCookieHeader() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(ACCESS_TOKEN).append("=; Path=/")
+                .append("; HttpOnly")
+                .append(";Max-Age=0")
+                .append("; SameSite=Lax");
+
+        return sb.toString();
     }
+
+    public String cookieName() {
+        return ACCESS_TOKEN;
+    }
+
 }

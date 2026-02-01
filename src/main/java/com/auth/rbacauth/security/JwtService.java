@@ -2,52 +2,59 @@ package com.auth.rbacauth.security;
 
 import java.security.Key;
 import java.util.Date;
-import java.util.Map;
+import java.util.UUID;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
-
-import com.auth.rbacauth.models.UserEntity;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 
 @Service
 public class JwtService {
-    @Value("${jwt.token}")
-    private String key;
+    private final Key key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
 
-    @Value("${jwt.expiration}")
-    private long expirationTime;
+    private long expirationTime = 1000000000;
 
-    public String generate(UserEntity user) {
-        Date now = new Date();
-        Date expiration = new Date(now.getTime() + expirationTime);
-
+    public String generate(Authentication auth) {
         return Jwts.builder()
-                .setSubject(user.getUsername())
-                .claim("role", user.getRole().name())
-                .setIssuedAt(now)
-                .setExpiration(expiration)
-                .signWith(Keys.hmacShaKeyFor(key.getBytes()))
+                .setSubject(auth.getName())
+                .claim("roles", auth.getAuthorities().iterator().next().getAuthority())
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + expirationTime))
+                .signWith(key)
                 .compact();
     }
 
-    public Jwt decode(String token) {
-        Claims claims = Jwts.parserBuilder()
-                .setSigningKey(Keys.hmacShaKeyFor(key.getBytes()))
+    public Claims parseClaims(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(key)
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
+    }
 
-        return new Jwt(
-                token,
-                claims.getIssuedAt().toInstant(),
-                claims.getExpiration().toInstant(),
-                Map.of("alg", "HS256"),
-                claims);
+    public boolean isTokenValid(String token) {
+        try {
+            Claims c = parseClaims(token);
+            return c.getExpiration().after(new Date());
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public String getUsernameFromToken(String token) {
+        return parseClaims(token).getSubject();
+    }
+
+    public String getRoleFromToken(String token) {
+        return (String) parseClaims(token).get("role");
+    }
+
+    public UUID getUUIDFromToken(String token) {
+        return (UUID) parseClaims(token).get("id");
     }
 
 }
